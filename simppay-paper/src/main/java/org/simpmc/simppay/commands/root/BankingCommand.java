@@ -10,7 +10,7 @@ import org.simpmc.simppay.config.types.BankingConfig;
 import org.simpmc.simppay.config.types.MessageConfig;
 import org.simpmc.simppay.data.PaymentStatus;
 import org.simpmc.simppay.forms.BankingForm;
-import org.simpmc.simppay.listener.internal.player.BankPromptListener;
+import org.simpmc.simppay.menu.BankQrMenuView;
 import org.simpmc.simppay.model.Payment;
 import org.simpmc.simppay.model.detail.BankingDetail;
 import org.simpmc.simppay.model.detail.PaymentDetail;
@@ -46,7 +46,7 @@ public class BankingCommand {
                             return;
                         }
                         byte[] qrMap = paymentService.getPlayerBankQRCode().get(player.getUniqueId());
-                        BankPromptListener.openPreview(player.getUniqueId(), qrMap);
+                        BankQrMenuView.openPreview(player.getUniqueId(), qrMap);
                         return;
                     }
 

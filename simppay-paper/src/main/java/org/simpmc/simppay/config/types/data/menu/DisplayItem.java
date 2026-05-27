@@ -6,6 +6,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -24,6 +25,7 @@ public class DisplayItem implements Cloneable {
     private String name;
     private List<String> lores;
     private int customModelData;
+    private String itemModel;
     private int amount;
     private RoleType role;
 
@@ -57,6 +59,7 @@ public class DisplayItem implements Cloneable {
             if (customModelData > 0) {
                 meta.setCustomModelData(customModelData);
             }
+            applyItemModel(meta);
             itemStack.setItemMeta(meta);
         }
         return itemStack;
@@ -77,9 +80,30 @@ public class DisplayItem implements Cloneable {
             if (customModelData > 0) {
                 meta.setCustomModelData(customModelData);
             }
+            applyItemModel(meta);
             itemStack.setItemMeta(meta);
         }
         return itemStack;
+    }
+
+    private void applyItemModel(ItemMeta meta) {
+        if (itemModel == null || itemModel.isBlank()) {
+            return;
+        }
+
+        NamespacedKey itemModelKey;
+        try {
+            itemModelKey = NamespacedKey.fromString(itemModel);
+        } catch (IllegalArgumentException e) {
+            itemModelKey = null;
+        }
+
+        if (itemModelKey == null) {
+            MessageUtil.warn("[DisplayItem] Invalid item-model '" + itemModel + "', skipping custom item model");
+            return;
+        }
+
+        meta.setItemModel(itemModelKey);
     }
 
 
