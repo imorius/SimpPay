@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.simpmc.simppay.config.types.banking.PayosConfig;
+import org.simpmc.simppay.handler.banking.data.BankingData;
 import org.simpmc.simppay.handler.banking.payos.PayosHandler;
 import org.simpmc.simppay.model.detail.BankingDetail;
 import org.simpmc.simppay.testutil.MockBukkitSetup;
@@ -56,5 +57,16 @@ class PayosHandlerTest {
 
         assertEquals(100000, detail.getAmount());
         assertEquals("test-ref-id", detail.getRefID());
+    }
+
+    @Test
+    void payosBankingData_carriesQrStringAndCheckoutUrl() {
+        BankingData bankingData = BankingData.builder()
+                .qrString("payos-qr-string")
+                .url("https://pay.payos.vn/web/example")
+                .build();
+
+        assertEquals("payos-qr-string", bankingData.getQrString());
+        assertEquals("https://pay.payos.vn/web/example", bankingData.getUrl());
     }
 }

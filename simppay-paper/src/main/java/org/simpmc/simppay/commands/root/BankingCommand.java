@@ -9,13 +9,13 @@ import org.simpmc.simppay.config.ConfigManager;
 import org.simpmc.simppay.config.types.BankingConfig;
 import org.simpmc.simppay.config.types.MessageConfig;
 import org.simpmc.simppay.data.PaymentStatus;
+import org.simpmc.simppay.listener.internal.player.BankPromptListener;
 import org.simpmc.simppay.model.Payment;
 import org.simpmc.simppay.model.detail.BankingDetail;
 import org.simpmc.simppay.model.detail.PaymentDetail;
 import org.simpmc.simppay.service.PaymentService;
 import org.simpmc.simppay.util.MessageUtil;
 import org.simpmc.simppay.util.SoundUtil;
-import org.simpmc.simppay.util.qrcode.MapQR;
 
 import java.util.UUID;
 
@@ -51,7 +51,7 @@ public class BankingCommand {
                         // resend qr map if player is in banking session
                         MessageUtil.sendMessage(player, messageConfig.existBankingSession);
                         byte[] qrMap = SPPlugin.getService(PaymentService.class).getPlayerBankQRCode().get(player.getUniqueId());
-                        MapQR.sendPacketQRMap(qrMap, player);
+                        BankPromptListener.openPreview(player.getUniqueId(), qrMap);
                         return;
                     }
                     UUID uuid = UUID.randomUUID(); // payment uuid is randomized

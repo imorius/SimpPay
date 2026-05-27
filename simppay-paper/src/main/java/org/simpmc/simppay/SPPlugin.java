@@ -1,8 +1,6 @@
 package org.simpmc.simppay;
 
-import com.github.retrooper.packetevents.PacketEvents;
 import com.tcoded.folialib.FoliaLib;
-import io.github.retrooper.packetevents.factory.spigot.SpigotPacketEventsBuilder;
 import lombok.Getter;
 import org.bukkit.event.Listener;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -58,9 +56,6 @@ public final class SPPlugin extends JavaPlugin {
 
     @Override
     public void onLoad() {
-        PacketEvents.setAPI(SpigotPacketEventsBuilder.build(this));
-        PacketEvents.getAPI().getSettings().checkForUpdates(false);
-        PacketEvents.getAPI().load();
         commandHandler = new CommandHandler(this);
         commandHandler.onLoad();
     }
@@ -68,7 +63,6 @@ public final class SPPlugin extends JavaPlugin {
     @Override
     public void onEnable() {
         // Reset config
-        PacketEvents.getAPI().init();
         InvUI.getInstance().setPlugin(this);
         registerMetrics();
         if (getServer().getPluginManager().getPlugin("floodgate") != null) {
@@ -114,7 +108,6 @@ public final class SPPlugin extends JavaPlugin {
     @Override
     public void onDisable() {
         // Plugin shutdown logic
-        PacketEvents.getAPI().terminate();
         for (var service : services) {
             try {
                 service.shutdown();

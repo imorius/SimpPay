@@ -32,9 +32,13 @@ public class MessageConfig {
 
     public String noExistBankingSession = "<color:#ff0000>Bạn chưa tạo lệnh nạp nào cả! Hãy gõ <white>/bank <số tiền><color:#ff0000> để tạo lệnh nạp mới!";
 
-    public String pendingBank = "<color:#00ff00>Hãy quét mã QR ở bên tay của bạn để thanh toán!";
+    public String pendingBank = "<color:#00ff00>Hãy quét mã QR trong cửa sổ thanh toán để hoàn tất giao dịch!";
 
-    public String promptPaymentLink = "<color:#00ff00>Bạn có thể thanh toán qua đường dẫn sau nếu QR trên tay bị lỗi: <dark_green><click:open_url:'<link>'>Click vào đây</click>";
+    public String bankQrWindowTitle = "Thanh toán ngân hàng";
+
+    public String bankQrUnavailable = "<color:#ff0000>Không thể hiển thị mã QR thanh toán. Vui lòng thử lại hoặc liên hệ Admin!";
+
+    public String promptPaymentLink = "<color:#00ff00>Bạn có thể thanh toán qua đường dẫn sau nếu QR trong cửa sổ bị lỗi: <dark_green><click:open_url:'<link>'>Click vào đây</click>";
 
     public String mustDivisibleBy1000 = "<color:#ff0000>Số tiền phải chia hết cho <white>1000<color:#ff0000>!";
 

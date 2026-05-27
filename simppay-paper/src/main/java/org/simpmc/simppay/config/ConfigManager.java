@@ -18,6 +18,7 @@ import org.simpmc.simppay.config.types.banking.PayosConfig;
 import org.simpmc.simppay.config.types.banking.SepayConfig;
 import org.simpmc.simppay.config.types.banking.Web2mConfig;
 import org.simpmc.simppay.config.types.card.*;
+import org.simpmc.simppay.config.types.menu.BankQrMenuConfig;
 import org.simpmc.simppay.config.types.menu.FormsConfig;
 import org.simpmc.simppay.config.types.menu.PaymentHistoryMenuConfig;
 import org.simpmc.simppay.config.types.menu.ServerPaymentHistoryMenuConfig;
@@ -69,6 +70,7 @@ public class ConfigManager {
             CardPriceMenuConfig.class,
             CardPinMenuConfig.class,
             CardSerialMenuConfig.class,
+            BankQrMenuConfig.class,
             PaymentHistoryMenuConfig.class,
             ServerPaymentHistoryMenuConfig.class,
             StreakMenuConfig.class,

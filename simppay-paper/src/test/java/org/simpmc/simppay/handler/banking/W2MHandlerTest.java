@@ -7,6 +7,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.simpmc.simppay.config.types.banking.Web2mConfig;
 import org.simpmc.simppay.handler.banking.web2m.W2MHandler;
 import org.simpmc.simppay.testutil.MockBukkitSetup;
+import org.simpmc.simppay.util.qrcode.BankQrRenderer;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -40,5 +41,12 @@ class W2MHandlerTest {
         String description = "Unrelated payment description";
         assertFalse(description.contains(refId),
                 "No match when description does not contain refId");
+    }
+
+    @Test
+    void web2mVietQrUrl_usesBinAccountAmountAndEncodedReference() {
+        String url = BankQrRenderer.buildVietQrImageUrl("970436", "123456789", 100000, "abc 123/xyz");
+
+        assertEquals("https://img.vietqr.io/image/970436-123456789-qr_only.png?amount=100000&addInfo=abc+123%2Fxyz", url);
     }
 }

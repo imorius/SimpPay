@@ -4,12 +4,12 @@ import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.simpmc.simppay.SPPlugin;
+import org.simpmc.simppay.commands.sub.banking.CancelCommand;
 import org.simpmc.simppay.config.ConfigManager;
-import org.simpmc.simppay.config.types.BankingConfig;
 import org.simpmc.simppay.config.types.MessageConfig;
+import org.simpmc.simppay.config.types.menu.BankQrMenuConfig;
 import org.simpmc.simppay.data.PaymentType;
 import org.simpmc.simppay.event.PaymentBankPromptEvent;
 import org.simpmc.simppay.event.PaymentFailedEvent;
@@ -17,28 +17,20 @@ import org.simpmc.simppay.event.PaymentSuccessEvent;
 import org.simpmc.simppay.handler.banking.data.BankingData;
 import org.simpmc.simppay.service.PaymentService;
 import org.simpmc.simppay.util.MessageUtil;
-import org.simpmc.simppay.util.qrcode.ItemFrameQR;
-import org.simpmc.simppay.util.qrcode.MapQR;
+import org.simpmc.simppay.util.qrcode.BankQrRenderer;
+import xyz.xenondevs.inventoryaccess.map.MapPatch;
+import xyz.xenondevs.invui.gui.Gui;
+import xyz.xenondevs.invui.item.Item;
+import xyz.xenondevs.invui.item.ItemWrapper;
+import xyz.xenondevs.invui.item.impl.SimpleItem;
+import xyz.xenondevs.invui.window.CartographyWindow;
 
-import javax.imageio.ImageIO;
-import java.awt.image.BufferedImage;
-import java.io.InputStream;
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.time.Duration;
-import java.util.Arrays;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class BankPromptListener implements Listener {
 
-    private static final HttpClient httpClient = HttpClient.newBuilder()
-            .connectTimeout(Duration.ofSeconds(10))
-            .build();
-
-    private static final ConcurrentHashMap<UUID, ItemFrameQR> activeItemFrames = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<UUID, CartographyWindow> activeWindows = new ConcurrentHashMap<>();
 
     public BankPromptListener(SPPlugin plugin) {
         plugin.getServer().getPluginManager().registerEvents(this, plugin);
@@ -57,147 +49,128 @@ public class BankPromptListener implements Listener {
             return;
         }
 
-        if (bankingData.getQrImageUrl() != null) {
-            fetchAndDisplayQRImage(bankingData.getQrImageUrl(), player, event.getPlayerUUID());
-        } else {
-            MessageUtil.debug("[BankPrompt] No QR data available for player: " + player.getName());
-        }
-    }
-
-    private void fetchAndDisplayQRImage(String imageUrl, Player player, UUID playerUUID) {
         SPPlugin.getInstance().getFoliaLib().getScheduler().runAsync(task -> {
             try {
-                HttpRequest request = HttpRequest.newBuilder()
-                        .uri(URI.create(imageUrl))
-                        .timeout(Duration.ofSeconds(15))
-                        .GET()
-                        .build();
-
-                HttpResponse<InputStream> response = httpClient.send(request, HttpResponse.BodyHandlers.ofInputStream());
-
-                if (response.statusCode() != 200) {
-                    MessageUtil.warn("[BankPrompt] Failed to fetch QR image: HTTP " + response.statusCode());
-                    return;
-                }
-
-                BufferedImage image = ImageIO.read(response.body());
-                if (image == null) {
-                    MessageUtil.warn("[BankPrompt] Failed to decode QR image from URL: " + imageUrl);
-                    return;
-                }
-
-                byte[] mapBytes = convertImageToMapBytes(image);
-
-                SPPlugin.getInstance().getFoliaLib().getScheduler().runAtEntity(player, sendTask -> {
-                    BankingConfig bankingConfig = ConfigManager.getInstance().getConfig(BankingConfig.class);
-                    SPPlugin.getService(PaymentService.class).getPlayerBankQRCode().put(playerUUID, mapBytes);
-
-                    if (bankingConfig.showQrAsItemFrame) {
-                        // Spawn a fake item frame entity visible only to this player
-                        ItemFrameQR frame = new ItemFrameQR(player, mapBytes);
-                        activeItemFrames.put(playerUUID, frame);
-                        MessageUtil.debug("[BankPrompt] Spawned item frame QR for player: " + player.getName());
-                    } else {
-                        // Show QR map in player's hand (existing behaviour)
-                        MapQR.sendPacketQRMap(mapBytes, player);
-                        MessageUtil.debug("[BankPrompt] Sent hand QR map to player: " + player.getName());
-                    }
-                });
-
+                byte[] mapBytes = BankQrRenderer.render(bankingData);
+                SPPlugin.getService(PaymentService.class).getPlayerBankQRCode().put(event.getPlayerUUID(), mapBytes);
+                openPreview(event.getPlayerUUID(), mapBytes);
             } catch (Exception e) {
-                MessageUtil.warn("[BankPrompt] Error fetching QR image: " + e.getMessage());
+                MessageUtil.warn("[BankPrompt] Error preparing QR preview: " + e.getMessage());
+                MessageUtil.sendMessage(event.getPlayerUUID(), config.bankQrUnavailable);
             }
         });
     }
 
-    /**
-     * Remove and destroy the item frame QR for a player.
-     * Also restores the player's hand slot if not using item frame mode.
-     */
-    public static void removeItemFrame(UUID playerUUID) {
-        ItemFrameQR frame = activeItemFrames.remove(playerUUID);
-        if (frame != null) {
-            frame.destroy();
+    public static void openPreview(UUID playerUUID, byte[] mapBytes) {
+        if (mapBytes == null) {
+            MessageUtil.debug("[BankPrompt] No cached QR preview available for player: " + playerUUID);
+            return;
+        }
+
+        Player player = Bukkit.getPlayer(playerUUID);
+        if (player == null) {
+            return;
+        }
+
+        SPPlugin.getInstance().getFoliaLib().getScheduler().runAtEntity(player, task -> {
+            closePreviewNow(playerUUID);
+
+            BankQrMenuConfig menuConfig = ConfigManager.getInstance().getConfig(BankQrMenuConfig.class);
+            Gui upperGui = Gui.empty(2, 1);
+            Gui lowerGui = Gui.empty(9, 4);
+            applyConfiguredItems(player, upperGui, lowerGui, menuConfig);
+
+            CartographyWindow window = CartographyWindow.split()
+                    .setViewer(player)
+                    .setTitle(menuConfig.title)
+                    .setUpperGui(upperGui)
+                    .setLowerGui(lowerGui)
+                    .build();
+            window.addCloseHandler(() -> activeWindows.remove(playerUUID, window));
+            activeWindows.put(playerUUID, window);
+            window.open();
+            window.updateMap(new MapPatch(0, 0, BankQrRenderer.MAP_SIZE, BankQrRenderer.MAP_SIZE, mapBytes));
+            MessageConfig config = ConfigManager.getInstance().getConfig(MessageConfig.class);
+            MessageUtil.sendMessage(player, config.pendingBank);
+            MessageUtil.debug("[BankPrompt] Opened bank QR preview for player: " + player.getName());
+        });
+    }
+
+    private static void applyConfiguredItems(Player player, Gui upperGui, Gui lowerGui, BankQrMenuConfig config) {
+        if (config.items == null) {
+            return;
+        }
+
+        for (BankQrMenuConfig.MenuEntry entry : config.items) {
+            if (!isValidEntry(entry)) {
+                continue;
+            }
+
+            Item item = createMenuItem(player, entry);
+            if (entry.inventory == BankQrMenuConfig.InventorySection.UPPER) {
+                upperGui.setItem(entry.slot, item);
+            } else {
+                lowerGui.setItem(entry.slot, item);
+            }
+        }
+    }
+
+    private static boolean isValidEntry(BankQrMenuConfig.MenuEntry entry) {
+        if (entry == null || entry.inventory == null || entry.item == null || entry.item.getMaterial() == null) {
+            MessageUtil.warn("[BankPrompt] Skipping invalid bank QR menu entry: missing inventory or item material");
+            return false;
+        }
+
+        int maxSlot = entry.inventory == BankQrMenuConfig.InventorySection.UPPER ? 1 : 35;
+        if (entry.slot < 0 || entry.slot > maxSlot) {
+            MessageUtil.warn("[BankPrompt] Skipping invalid bank QR menu entry: " + entry.inventory
+                    + " slot " + entry.slot + " is outside 0-" + maxSlot);
+            return false;
+        }
+
+        return true;
+    }
+
+    private static Item createMenuItem(Player player, BankQrMenuConfig.MenuEntry entry) {
+        ItemWrapper itemProvider = new ItemWrapper(entry.item.getItemStack(player));
+        if (entry.action == BankQrMenuConfig.MenuAction.CANCEL) {
+            return new SimpleItem(itemProvider, click -> CancelCommand.cancel(click.getPlayer()));
+        }
+        return new SimpleItem(itemProvider);
+    }
+
+    public static void closePreview(UUID playerUUID) {
+        Player player = Bukkit.getPlayer(playerUUID);
+        if (player != null) {
+            SPPlugin.getInstance().getFoliaLib().getScheduler().runAtEntity(player, task -> closePreviewNow(playerUUID));
+            return;
+        }
+        closePreviewNow(playerUUID);
+    }
+
+    private static void closePreviewNow(UUID playerUUID) {
+        CartographyWindow window = activeWindows.remove(playerUUID);
+        if (window != null && window.isOpen()) {
+            window.close();
         }
     }
 
     @EventHandler
     public void onPaymentSuccess(PaymentSuccessEvent event) {
         if (event.getPaymentType() == PaymentType.BANKING) {
-            removeItemFrame(event.getPlayerUUID());
+            closePreview(event.getPlayerUUID());
         }
     }
 
     @EventHandler
     public void onPaymentFailed(PaymentFailedEvent event) {
         if (event.getPaymentType() == PaymentType.BANKING) {
-            removeItemFrame(event.getPlayerUUID());
+            closePreview(event.getPlayerUUID());
         }
     }
 
     @EventHandler
     public void onPlayerQuit(PlayerQuitEvent event) {
-        removeItemFrame(event.getPlayer().getUniqueId());
-    }
-
-    /**
-     * Re-send QR map when player closes their inventory.
-     * Inventory close triggers a server inventory sync that overwrites the fake map slot,
-     * so we re-send the QR packet to keep it visible.
-     */
-    @EventHandler
-    public void onInventoryClose(InventoryCloseEvent event) {
-        if (!(event.getPlayer() instanceof Player player)) return;
-        UUID playerUUID = player.getUniqueId();
-        BankingConfig bankingConfig = ConfigManager.getInstance().getConfig(BankingConfig.class);
-        if (bankingConfig.showQrAsItemFrame) return; // item frame mode doesn't need resend
-        if (!SPPlugin.getService(PaymentService.class).getPlayerBankingSessionPayment().containsKey(playerUUID)) return;
-        byte[] mapBytes = SPPlugin.getService(PaymentService.class).getPlayerBankQRCode().get(playerUUID);
-        if (mapBytes == null) return;
-        // Schedule after 1 tick so the server sync completes before we re-send
-        SPPlugin.getInstance().getFoliaLib().getScheduler().runAtEntity(player, sendTask ->
-                MapQR.sendPacketQRMap(mapBytes, player)
-        );
-    }
-
-    /**
-     * Convert a BufferedImage to Minecraft map bytes (128x128).
-     */
-    @SuppressWarnings("deprecation")
-    private byte[] convertImageToMapBytes(BufferedImage original) {
-        final int TARGET = 128;
-
-        BufferedImage scaled;
-        if (original.getWidth() != TARGET || original.getHeight() != TARGET) {
-            scaled = new BufferedImage(TARGET, TARGET, BufferedImage.TYPE_INT_ARGB);
-            var g = scaled.createGraphics();
-            g.drawImage(original, 0, 0, TARGET, TARGET, null);
-            g.dispose();
-        } else {
-            scaled = original;
-        }
-
-        byte[] mapBytes = new byte[TARGET * TARGET];
-        Arrays.fill(mapBytes, (byte) 0);
-
-        for (int y = 0; y < TARGET; y++) {
-            for (int x = 0; x < TARGET; x++) {
-                int rgb = scaled.getRGB(x, y);
-                int r = (rgb >> 16) & 0xFF;
-                int g = (rgb >> 8) & 0xFF;
-                int b = rgb & 0xFF;
-                int a = (rgb >> 24) & 0xFF;
-
-                if (a < 128) {
-                    r = 255;
-                    g = 255;
-                    b = 255;
-                }
-
-                mapBytes[x + y * TARGET] = org.bukkit.map.MapPalette.matchColor(r, g, b);
-            }
-        }
-
-        return mapBytes;
+        closePreviewNow(event.getPlayer().getUniqueId());
     }
 }
