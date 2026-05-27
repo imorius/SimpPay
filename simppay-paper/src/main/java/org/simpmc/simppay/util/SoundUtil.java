@@ -9,6 +9,9 @@ import java.util.UUID;
 
 public class SoundUtil {
     public static void sendSound(Player player, Sound sound) {
+        if (player == null || !player.isOnline()) {
+            return;
+        }
         SPPlugin.getInstance().getFoliaLib().getScheduler().runAtEntity(player, task -> {
             player.playSound(sound, Sound.Emitter.self());
         });
@@ -16,11 +19,6 @@ public class SoundUtil {
 
     public static void sendSound(UUID playerUUID, Sound sound) {
         Player player = Bukkit.getPlayer(playerUUID);
-        if (player == null) {
-            return;
-        }
-        SPPlugin.getInstance().getFoliaLib().getScheduler().runAtEntity(player, task -> {
-            player.playSound(sound, Sound.Emitter.self());
-        });
+        sendSound(player, sound);
     }
 }

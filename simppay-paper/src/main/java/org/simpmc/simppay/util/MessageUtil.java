@@ -22,12 +22,15 @@ import java.util.UUID;
 
 public class MessageUtil {
     public static void sendMessage(Player player, String message) {
+        if (player == null || !player.isOnline()) {
+            return;
+        }
         taskMessage(message, player);
     }
 
     public static void sendMessage(CommandSender sender, String message) {
-        if (sender instanceof Player) {
-            taskMessage(message, (Player) sender);
+        if (sender instanceof Player player) {
+            sendMessage(player, message);
         } else {
             SPPlugin.getInstance().getLogger().info(message);
         }
@@ -35,10 +38,7 @@ public class MessageUtil {
 
     public static void sendMessage(UUID playerUuid, String message) {
         Player player = Bukkit.getPlayer(playerUuid);
-        if (player == null) {
-            return;
-        }
-        taskMessage(message, player);
+        sendMessage(player, message);
     }
 
     public static Component getComponentParsed(String message, Player player) {
@@ -55,6 +55,9 @@ public class MessageUtil {
     }
 
     private static void taskMessage(String message, Player player) {
+        if (player == null || !player.isOnline()) {
+            return;
+        }
         SPPlugin.getInstance().getFoliaLib().getScheduler().runAtEntity(player, task -> {
             MessageConfig messageConfig = ConfigManager.getInstance().getConfig(MessageConfig.class);
             MiniMessage mm = MiniMessage.builder()
