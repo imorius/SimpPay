@@ -81,6 +81,7 @@ public class SepayHandler extends BankHandler {
         // Build banking data for display to player
         BankingData bankingData = BankingData.builder()
                 .bin(bin)
+                .bankName(config.bankName)
                 .playerUUID(payment.getPlayerUUID())
                 .desc(referenceCode)
                 .amount(detail.getAmount())

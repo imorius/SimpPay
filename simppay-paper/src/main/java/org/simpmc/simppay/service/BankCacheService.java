@@ -123,6 +123,25 @@ public class BankCacheService implements IService {
     }
 
     /**
+     * Get bank data by BIN code.
+     *
+     * @param bin BIN code to search for
+     * @return BankData if found, null otherwise
+     */
+    public BankData getBankByBin(String bin) {
+        if (bin == null || bin.isEmpty()) {
+            return null;
+        }
+
+        synchronized (bankCache) {
+            return bankCache.values().stream()
+                    .filter(bank -> bin.equals(bank.getBin()))
+                    .findFirst()
+                    .orElse(null);
+        }
+    }
+
+    /**
      * Check if bank cache is loaded
      *
      * @return true if cache is loaded

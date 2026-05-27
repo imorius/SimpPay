@@ -14,8 +14,10 @@ import org.simpmc.simppay.data.PaymentType;
 import org.simpmc.simppay.event.PaymentBankPromptEvent;
 import org.simpmc.simppay.event.PaymentFailedEvent;
 import org.simpmc.simppay.event.PaymentSuccessEvent;
+import org.simpmc.simppay.forms.BankingForm;
 import org.simpmc.simppay.handler.banking.data.BankingData;
 import org.simpmc.simppay.service.PaymentService;
+import org.simpmc.simppay.util.FloodgateUtil;
 import org.simpmc.simppay.util.MessageUtil;
 import org.simpmc.simppay.util.qrcode.BankQrRenderer;
 import xyz.xenondevs.inventoryaccess.map.MapPatch;
@@ -40,6 +42,9 @@ public class BankPromptListener implements Listener {
     public void paymentPrompt(PaymentBankPromptEvent event) {
         MessageConfig config = ConfigManager.getInstance().getConfig(MessageConfig.class);
         BankingData bankingData = event.getBankingData();
+        PaymentService paymentService = SPPlugin.getService(PaymentService.class);
+        paymentService.getPlayerBankingData().put(event.getPlayerUUID(), bankingData);
+
         if (bankingData.getUrl() != null) {
             MessageUtil.sendMessage(event.getPlayerUUID(), config.promptPaymentLink.replace("<link>", bankingData.getUrl()));
         }
@@ -49,10 +54,16 @@ public class BankPromptListener implements Listener {
             return;
         }
 
+        if (FloodgateUtil.isBedrockPlayer(player)) {
+            BankingForm.send(player, bankingData);
+            MessageUtil.sendMessage(player, config.pendingBank);
+            return;
+        }
+
         SPPlugin.getInstance().getFoliaLib().getScheduler().runAsync(task -> {
             try {
                 byte[] mapBytes = BankQrRenderer.render(bankingData);
-                SPPlugin.getService(PaymentService.class).getPlayerBankQRCode().put(event.getPlayerUUID(), mapBytes);
+                paymentService.getPlayerBankQRCode().put(event.getPlayerUUID(), mapBytes);
                 openPreview(event.getPlayerUUID(), mapBytes);
             } catch (Exception e) {
                 MessageUtil.warn("[BankPrompt] Error preparing QR preview: " + e.getMessage());

@@ -11,10 +11,13 @@ import java.util.UUID;
 public class BankingData {
     public UUID playerUUID;
     public String desc;
-    public String bin; // represents the bank name
+    public String bin;
     public double amount;
     public String accountNumber;
     public String url;
+
+    @Nullable
+    public String bankName;
 
     @Nullable
     public String qrString;

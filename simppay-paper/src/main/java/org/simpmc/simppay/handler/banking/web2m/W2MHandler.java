@@ -47,6 +47,7 @@ public class W2MHandler extends BankHandler {
 
         BankingData bankData = BankingData.builder()
                 .bin(bank.bin)
+                .bankName(bank.name())
                 .playerUUID(payment.getPlayerUUID())
                 .desc(refId)
                 .amount(detail.getAmount())

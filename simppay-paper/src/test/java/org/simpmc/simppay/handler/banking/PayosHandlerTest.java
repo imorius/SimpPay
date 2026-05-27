@@ -63,10 +63,12 @@ class PayosHandlerTest {
     void payosBankingData_carriesQrStringAndCheckoutUrl() {
         BankingData bankingData = BankingData.builder()
                 .qrString("payos-qr-string")
+                .bankName("VCB")
                 .url("https://pay.payos.vn/web/example")
                 .build();
 
         assertEquals("payos-qr-string", bankingData.getQrString());
+        assertEquals("VCB", bankingData.getBankName());
         assertEquals("https://pay.payos.vn/web/example", bankingData.getUrl());
     }
 }

@@ -5,6 +5,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.simpmc.simppay.config.types.banking.Web2mConfig;
+import org.simpmc.simppay.data.bank.web2m.BankType;
+import org.simpmc.simppay.handler.banking.data.BankingData;
 import org.simpmc.simppay.handler.banking.web2m.W2MHandler;
 import org.simpmc.simppay.testutil.MockBukkitSetup;
 import org.simpmc.simppay.util.qrcode.BankQrRenderer;
@@ -48,5 +50,15 @@ class W2MHandlerTest {
         String url = BankQrRenderer.buildVietQrImageUrl("970436", "123456789", 100000, "abc 123/xyz");
 
         assertEquals("https://img.vietqr.io/image/970436-123456789-qr_only.png?amount=100000&addInfo=abc+123%2Fxyz", url);
+    }
+
+    @Test
+    void web2mBankingData_carriesBankTypeName() {
+        BankingData bankingData = BankingData.builder()
+                .bin(BankType.VCB.bin)
+                .bankName(BankType.VCB.name())
+                .build();
+
+        assertEquals("VCB", bankingData.getBankName());
     }
 }

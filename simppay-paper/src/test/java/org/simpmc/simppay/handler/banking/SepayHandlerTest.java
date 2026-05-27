@@ -57,9 +57,11 @@ class SepayHandlerTest {
     @Test
     void sepayBankingData_carriesQrImageUrl() {
         BankingData bankingData = BankingData.builder()
+                .bankName("Vietcombank")
                 .qrImageUrl("https://qr.sepay.vn/img?acc=123&bank=VCB&amount=10000&des=smc123&template=qronly")
                 .build();
 
+        assertEquals("Vietcombank", bankingData.getBankName());
         assertEquals("https://qr.sepay.vn/img?acc=123&bank=VCB&amount=10000&des=smc123&template=qronly", bankingData.getQrImageUrl());
     }
 }
