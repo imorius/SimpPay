@@ -19,6 +19,7 @@ import org.simpmc.simppay.model.PaymentResult;
 import org.simpmc.simppay.model.detail.PaymentDetail;
 import org.simpmc.simppay.util.GsonUtil;
 import org.simpmc.simppay.util.MessageUtil;
+import org.simpmc.simppay.util.qrcode.BankQrRenderer;
 
 import java.io.IOException;
 import java.util.UUID;
@@ -46,12 +47,14 @@ public class W2MHandler extends BankHandler {
 
         BankingData bankData = BankingData.builder()
                 .bin(bank.bin)
+                .bankName(bank.name())
                 .playerUUID(payment.getPlayerUUID())
                 .desc(refId)
                 .amount(detail.getAmount())
                 .url(null)
                 .accountNumber(w2mConfig.accountNumber)
                 .qrString(null)
+                .qrImageUrl(BankQrRenderer.buildVietQrImageUrl(bank.bin, w2mConfig.accountNumber, Math.round(detail.getAmount()), refId))
                 .build();
         MessageUtil.debug("[W2M-ProcessPayment]" + bankData);
         Bukkit.getPluginManager().callEvent(new PaymentQueueSuccessEvent(payment));

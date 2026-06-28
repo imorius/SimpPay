@@ -7,6 +7,7 @@ import org.simpmc.simppay.config.types.BankingConfig;
 import org.simpmc.simppay.config.types.CardConfig;
 import org.simpmc.simppay.data.PaymentStatus;
 import org.simpmc.simppay.handler.HandlerRegistry;
+import org.simpmc.simppay.handler.banking.data.BankingData;
 import org.simpmc.simppay.handler.data.BankAPI;
 import org.simpmc.simppay.handler.data.CardAPI;
 import org.simpmc.simppay.model.Payment;
@@ -23,6 +24,7 @@ public class PaymentService implements IService {
     private final ConcurrentHashMap<UUID, Payment> payments = new ConcurrentHashMap<>(); // payment id is key
     private final ConcurrentHashMap<UUID, UUID> playerBankingSessionPayment = new ConcurrentHashMap<>(); // Store player uuid and payment id
     private final ConcurrentHashMap<UUID, byte[]> playerBankQRCode = new ConcurrentHashMap<>(); // Store player uuid and map bytes for resend
+    private final ConcurrentHashMap<UUID, BankingData> playerBankingData = new ConcurrentHashMap<>(); // Store player uuid and active banking details
     private HandlerRegistry handlerRegistry;
 
     // use for storing data and pulling data out of the db later on
@@ -67,6 +69,7 @@ public class PaymentService implements IService {
 
     public void clearPlayerBankCache(UUID playerUUID) {
         playerBankQRCode.remove(playerUUID);
+        playerBankingData.remove(playerUUID);
         playerBankingSessionPayment.remove(playerUUID);
     }
 
@@ -99,6 +102,7 @@ public class PaymentService implements IService {
         pollingPayments.remove(paymentID);
         playerBankingSessionPayment.remove(playerUUID);
         playerBankQRCode.remove(playerUUID);
+        playerBankingData.remove(playerUUID);
     }
 
 }

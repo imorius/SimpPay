@@ -11,6 +11,7 @@ dependencies {
     testImplementation "io.papermc.paper:paper-api:1.21.11-R0.1-SNAPSHOT"
     testImplementation 'com.squareup.okhttp3:okhttp:5.0.0-alpha.12'
     testImplementation 'com.google.code.gson:gson:2.10.1'
+    testImplementation 'org.geysermc.cumulus:cumulus:1.1.2'
     testAnnotationProcessor 'org.projectlombok:lombok:1.18.38'
     testCompileOnly 'org.projectlombok:lombok:1.18.38'
 compileOnly 'org.projectlombok:lombok:1.18.38'
@@ -32,7 +33,7 @@ compileOnly 'org.projectlombok:lombok:1.18.38'
     }
     implementation "dev.jorel:commandapi-paper-shade:11.1.0"
     implementation("com.tcoded:FoliaLib:0.5.1")
-    compileOnly("com.github.retrooper:packetevents-spigot:2.11.1")
+    implementation("com.google.zxing:core:3.5.4")
     implementation('net.wesjd:anvilgui:2.0.4-SNAPSHOT')
 }
 
@@ -49,8 +50,14 @@ shadowJar {
     relocate("de.exlll.configlib", "me.typical.lib.configlib")
     relocate("dev.jorel.commandapi", "me.typical.lib.commandapi")
     relocate("com.tcoded.folialib", "me.typical.lib.folialib")
+    relocate("com.google.zxing", "me.typical.lib.zxing")
     relocate("org.json.json", "me.typical.lib.json")
     relocate("net.wesjd.anvilgui", "me.typical.lib.anvilgui")
+    manifest {
+        attributes(
+                'paperweight-mappings-namespace': 'mojang'
+        )
+    }
 }
 processResources {
     def props = [version: version]
@@ -62,6 +69,7 @@ processResources {
 }
 test {
     useJUnitPlatform()
+    jvmArgs '-Dnet.bytebuddy.experimental=true'
 }
 tasks.build {
     dependsOn(shadowJar)

@@ -15,10 +15,12 @@ import org.simpmc.simppay.handler.BankHandler;
 import org.simpmc.simppay.handler.banking.data.BankingData;
 import org.simpmc.simppay.handler.banking.payos.data.PayosPayment;
 import org.simpmc.simppay.handler.banking.payos.data.PayosResponse;
+import org.simpmc.simppay.handler.banking.sepay.data.BankData;
 import org.simpmc.simppay.model.Payment;
 import org.simpmc.simppay.model.PaymentResult;
 import org.simpmc.simppay.model.detail.BankingDetail;
 import org.simpmc.simppay.model.detail.PaymentDetail;
+import org.simpmc.simppay.service.BankCacheService;
 import org.simpmc.simppay.service.OrderIDService;
 import org.simpmc.simppay.util.GsonUtil;
 import org.simpmc.simppay.util.HashUtil;
@@ -70,6 +72,7 @@ public class PayosHandler extends BankHandler {
 
             BankingData bankData = BankingData.builder()
                     .bin(request.getData().getBin())
+                    .bankName(resolveBankName(request.getData().getBin()))
                     .playerUUID(payment.getPlayerUUID())
                     .desc(request.getData().getDescription())
                     .amount(request.getData().getAmount())
@@ -84,6 +87,14 @@ public class PayosHandler extends BankHandler {
         MessageUtil.warn("[PayOS-ProcessPayment] Unexpected status from PayOS: " + request);
         // default to failed if other status codes
         return PaymentStatus.FAILED;
+    }
+
+    private String resolveBankName(String bin) {
+        BankData bankData = SPPlugin.getService(BankCacheService.class).getBankByBin(bin);
+        if (bankData != null && bankData.getShortName() != null && !bankData.getShortName().isBlank()) {
+            return bankData.getShortName();
+        }
+        return bin;
     }
 
     @Override

@@ -22,6 +22,9 @@ public class FormsConfig {
     @Comment("Cau hinh form streak Bedrock")
     public StreakFormStrings streakForm = new StreakFormStrings();
 
+    @Comment("Cau hinh form chuyen khoan ngan hang Bedrock")
+    public BankingFormStrings bankingForm = new BankingFormStrings();
+
     @Configuration
     public static class NaptheFormStrings {
         public String title = "SimpPay - Nap the";
@@ -60,5 +63,14 @@ public class FormsConfig {
         public String lockedText = "Chưa mở khoá";
         public String remainingDaysFormat = "Còn %d ngày nữa!";
         public String rewardsLabel = "Phần thưởng:";
+    }
+
+    @Configuration
+    public static class BankingFormStrings {
+        public String title = "SimpPay - Chuyen khoan";
+        public String contentFormat = "So tai khoan: %s\nNgan hang: %s\nSo tien: %s\nNoi dung: %s";
+        public String unknownBankName = "Khong xac dinh";
+        public String closeButtonLabel = "Close";
+        public String cancelButtonLabel = "Cancel Payment";
     }
 }

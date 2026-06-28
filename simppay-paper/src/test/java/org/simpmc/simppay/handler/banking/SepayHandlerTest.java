@@ -6,6 +6,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.simpmc.simppay.config.types.banking.SepayConfig;
 import org.simpmc.simppay.data.PaymentStatus;
+import org.simpmc.simppay.handler.banking.data.BankingData;
 import org.simpmc.simppay.handler.banking.sepay.SepayHandler;
 import org.simpmc.simppay.model.PaymentResult;
 import org.simpmc.simppay.model.detail.PaymentDetail;
@@ -51,5 +52,16 @@ class SepayHandlerTest {
         // verify the config guard logic by checking the default value:
         assertTrue(config.webhookApiKey.equals("YOUR_WEBHOOK_API_KEY_HERE"),
                 "Default config must have placeholder API key to trigger FAILED path");
+    }
+
+    @Test
+    void sepayBankingData_carriesQrImageUrl() {
+        BankingData bankingData = BankingData.builder()
+                .bankName("Vietcombank")
+                .qrImageUrl("https://qr.sepay.vn/img?acc=123&bank=VCB&amount=10000&des=smc123&template=qronly")
+                .build();
+
+        assertEquals("Vietcombank", bankingData.getBankName());
+        assertEquals("https://qr.sepay.vn/img?acc=123&bank=VCB&amount=10000&des=smc123&template=qronly", bankingData.getQrImageUrl());
     }
 }
